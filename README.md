@@ -89,6 +89,17 @@ data returned by the API.
 SparkPostRails will support multiple recipients, multilple CC, multiple BCC, ReplyTo address, file attachments, inline images, multi-part (HTML and plaintext) messages - 
 all utilizing the standard ActionMailer methodologies.
 
+Handling Errors
+---------------
+If you are using `ActiveJob` and wish to do something special when the SparkPost API responds with an error condition you can do so by rescuing these exceptions via `ActionMailer::DeliveryJob`. Simply add an initializer:
+
+`config/initializers/action_mailer.rb`
+
+```
+ActionMailer::DeliveryJob.rescue_from(SparkPostRails::DeliveryException) do |exception|
+  # do something special with the error
+end
+```
 
 SparkPost Specific Features
 ---------------------------
@@ -213,12 +224,14 @@ mail(to: recipients, sparkpost_data: sparkpost_data)
 
 ### Using SparkPost Templates
 If you would rather leverage SparkPost's powerful templates rather than building ActionMailer views, SparkPostRails can support that as well.  Simply
-add your template id to the sparkpost_data hash:
+add your template id to the sparkpost_data hash. By default, ActionMailer finds a template to use within views, a workaround to prevent this default action is to explicitly pass a block with an empty text part:
 
 ```
 data = { template_id: "MY-TEMPLATE" }
 
-mail(to: to_email, sparkpost_data: data)
+mail(to: to_email, sparkpost_data: data) do |format|
+  format.text { render text: "" }
+end
 ```
 
 **NOTE**: All inline-content that may exist in your mail message will be ignored, as the SparkPost API does not accept that data when a template id is 
